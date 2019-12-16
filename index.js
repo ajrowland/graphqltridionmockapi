@@ -1,15 +1,17 @@
 const { ApolloServer, gql } = require('apollo-server');
+const { MockList } = require('graphql-tools');
 let casual = require('casual');
 
 const typeDefs = gql`
   type Query {
     page(pubId: String): Page
-    pages(pubId: String): [Page]
+    pages(pubId: String, numPages: Int): [Page]
   }
 
   type Page {
     itemId: String
     title: String
+    url: String
     containerItems: [ContainerItem]
   }
 
@@ -70,9 +72,9 @@ const typeDefs = gql`
 `;
 
 const resolvers = {
-  Query: {
-    //fragments: () => `<p>${casual.sentence}</p>`,
-  },
+  Page: {
+    url: () => `/${casual.word}.html`,
+  }
 };
 
 const html = function() {
@@ -101,9 +103,13 @@ const html = function() {
 };
 
 const mocks = {
-  Page: (parent, args) => ({
+  Query: () =>({
+    pages: (parent, args) => new MockList(args.numPages)
+  }),
+  Page: (parent, args, context, info) => ({
     itemId: casual.uuid,
-    title: `${args.pubId ? args.pubId + ' - ' : ''}${casual.title}`
+    title: `${args.pubId ? args.pubId + ' - ' : ''}${casual.title}`,
+    url: () => `/${casual.word}/${casual.word}.html`
   }),
   ContainerItem: () => ({
     itemId: casual.uuid
